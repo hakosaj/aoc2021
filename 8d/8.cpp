@@ -15,6 +15,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <typeinfo>
 #include <vector>
 
 using std::cout;
@@ -113,17 +114,16 @@ std::map<int, int> unmb = {{2, 1}, {4, 4}, {3, 7}, {7, 8}};
 std::map<int, std::set<char>> strs;
 std::set<char> full{'a', 'b', 'c', 'd', 'e', 'f', 'g'};
 
-std::set<std::set<char>> sixes;
-std::set<std::set<char>> fives;
 
 void analyse_contents(vector<string> stuff) {
-  for (int i = 0; i < stuff.size(); i += 2) {
+  long totalsum=0;
+  for (int i = 0; i < stuff.size(); i++) {
+  std::set<std::set<char>> sixes;
+  std::set<std::set<char>> fives;
     auto d = split(stuff[i], " ");
-    auto d2 = split(stuff[i + 1], " ");
-    d.insert(d.end(), d2.begin(), d2.end());
     for (int a = 0; a < d.size(); a++) {
       if (d[a].size() == 1) {
-        break;
+        continue;
       }
       auto wrd = d[a];
       std::set<char> d;
@@ -162,7 +162,7 @@ void analyse_contents(vector<string> stuff) {
     tempsixes = sixes;
     for (const auto &d : sixes) {
       if (setintersect(notsevens, setminus(full, d)).size()) {
-        strs[6] = d;
+        strs[0] = d;
         sixes.erase(d);
         break;
       }
@@ -171,7 +171,7 @@ void analyse_contents(vector<string> stuff) {
     // last element of sixes is zero
     tempsixes = sixes;
     for (const auto &d : tempsixes) {
-      strs[0] = d;
+      strs[6] = d;
       sixes.erase(d);
       break;
     }
@@ -192,7 +192,7 @@ void analyse_contents(vector<string> stuff) {
     tempfives = fives;
     for (const auto &d : tempfives) {
       if (setintersect(notfour, setminus(full, d)).size() == 1) {
-        strs[5] = d;
+        strs[2] = d;
         fives.erase(d);
         break;
       }
@@ -200,15 +200,45 @@ void analyse_contents(vector<string> stuff) {
     // last element of fives is two
     tempfives = fives;
     for (const auto &d : tempfives) {
-      strs[2] = d;
+      strs[5] = d;
       fives.erase(d);
       break;
     }
+
+
+    auto r = split(stuff[i], " ");
+      vector<int> sm;
+    for (int a = r.size()-4; a < r.size(); a++) {
+      std::set<char> cm;
+      std::sort(r[a].begin(), r[a].end());
+      for (char c : r[a]) {
+        cm.insert(c);
+      }
+      for (const auto& [key, value] : strs) {
+      if (value == cm){
+        sm.push_back((int)key);
+      }
+
+    }
+    }
+    long summ=0;
+    int tens=1000;
+    for (const auto &gd:sm) {
+      summ+=gd*tens;
+      tens/=10;
+    }
+    totalsum+=summ;
+
+    
   }
+
+
+
+cout<<totalsum<<endl;
 }
 
 int main() {
-  auto stuff = readfile("test.txt");
+  auto stuff = readfile("data.txt");
   auto start_time = std::chrono::high_resolution_clock::now();
   analyse_contents(stuff);
 
