@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using std::cout;
@@ -81,25 +82,129 @@ string eraseCharacter(string str, char token) {
   str.erase(std::remove(str.begin(), str.end(), token), str.end());
   return str;
 }
+std::set<char> setminus(std::set<char> a, std::set<char> b) {
+  string result;
+  std::set<char> d;
+  set_difference(a.begin(), a.end(), b.begin(), b.end(),
+                 inserter(result, result.begin()));
+  for (char c : result) {
+    d.insert(c);
+  }
+  return d;
+}
 
-//Segments,number
-std::map<int,int> nmb={{2,1},{4,4},{3,7},{7,8}};
+std::set<char> setintersect(std::set<char> a, std::set<char> b) {
+  string result;
+  std::set<char> d;
+  set_intersection(a.begin(), a.end(), b.begin(), b.end(),
+                   inserter(result, result.begin()));
+  for (char c : result) {
+    d.insert(c);
+  }
+  return d;
+}
+
+// Segments,number
+std::map<int, int> nmb = {{6, 0}, {2, 1}, {5, 2}, {5, 3}, {4, 4},
+                          {5, 5}, {6, 6}, {3, 7}, {7, 8}, {6, 9}};
+// segments vs number
+std::map<int, int> unmb = {{2, 1}, {4, 4}, {3, 7}, {7, 8}};
+
+std::map<int, std::set<char>> strs;
+std::set<char> full{'a', 'b', 'c', 'd', 'e', 'f', 'g'};
+
+std::set<std::set<char>> sixes;
+std::set<std::set<char>> fives;
 
 void analyse_contents(vector<string> stuff) {
-  int count=0;
-  //for (int i=0;i<stuff.size();i++) {
-    //auto d=split(split(stuff[i],"|")[1]," ");
-  for (int i=1;i<stuff.size();i+=2) {
-    auto d=split(stuff[i]," ");
-      for(int a=0;a<d.size();a++) {
-        if (nmb.count(d[a].size()) ){
-          count++;
-        }
+  for (int i = 0; i < stuff.size(); i += 2) {
+    auto d = split(stuff[i], " ");
+    auto d2 = split(stuff[i + 1], " ");
+    d.insert(d.end(), d2.begin(), d2.end());
+    for (int a = 0; a < d.size(); a++) {
+      if (d[a].size() == 1) {
+        break;
       }
+      auto wrd = d[a];
+      std::set<char> d;
+      std::sort(wrd.begin(), wrd.end());
+      for (char c : wrd) {
+        d.insert(c);
+      }
+      if (wrd.size() == 2) {
+        strs[1] = d;
+      } else if (wrd.size() == 4) {
+        strs[4] = d;
+      } else if (wrd.size() == 3) {
+        strs[7] = d;
+      } else if (wrd.size() == 7) {
+        strs[8] = d;
+      } else if (wrd.size() == 5) {
+        fives.insert(d);
+      } else if (wrd.size() == 6) {
+        sixes.insert(d);
+      }
+    }
+
+    // If something in six and intersect with not fours len one, then nine
+    auto notfours = setminus(full, strs[4]);
+    auto tempsixes = sixes;
+    for (const auto &d : tempsixes) {
+      if (setintersect(notfours, setminus(full, d)).size()) {
+        strs[9] = d;
+        sixes.erase(d);
+        break;
+      }
+    }
+
+    // If something is six and intersect with not seven len one, then six
+    auto notsevens = setminus(full, strs[7]);
+    tempsixes = sixes;
+    for (const auto &d : sixes) {
+      if (setintersect(notsevens, setminus(full, d)).size()) {
+        strs[6] = d;
+        sixes.erase(d);
+        break;
+      }
+    }
+
+    // last element of sixes is zero
+    tempsixes = sixes;
+    for (const auto &d : tempsixes) {
+      strs[0] = d;
+      sixes.erase(d);
+      break;
+    }
+
+    auto tempfives = fives;
+    // If something is five and intersect with not seven is two, then three
+    notsevens = setminus(full, strs[7]);
+    for (const auto &d : tempfives) {
+      if (setintersect(notsevens, setminus(full, d)).size() == 2) {
+        strs[3] = d;
+        fives.erase(d);
+        break;
+      }
+    }
+
+    // If something is five and intersect with not four is one, then five
+    auto notfour = setminus(full, strs[7]);
+    tempfives = fives;
+    for (const auto &d : tempfives) {
+      if (setintersect(notfour, setminus(full, d)).size() == 1) {
+        strs[5] = d;
+        fives.erase(d);
+        break;
+      }
+    }
+    // last element of fives is two
+    tempfives = fives;
+    for (const auto &d : tempfives) {
+      strs[2] = d;
+      fives.erase(d);
+      break;
+    }
   }
-  cout<<count<<endl;
-
-
 }
 
 int main() {
