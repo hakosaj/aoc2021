@@ -82,46 +82,93 @@ string eraseCharacter(string str, char token) {
   return str;
 }
 
-string performSwaps(string polymer, std::map<string, string> swaps) {
-  int extraindex = 0;
-  auto polymer2 = polymer;
+std::map<string,long> performSwaps(string polymer, std::map<string, string> swaps,  int rounds) {
+  std::map<string,long> pairs;
+  rounds=10;
+  //First, add all pairs to the map
   for (int i = 0; i < polymer.size() - 1; i++) {
     string ss = polymer.substr(i, 2);
-    if (swaps.count(ss)) {
-      polymer2.insert(polymer2.begin() + i + 1 + extraindex, swaps[ss][0]);
-      extraindex++;
+    if (pairs.count(ss)) {
+      pairs[ss]+=1;
+    }
+    else {
+      pairs[ss]=1;
     }
   }
-  return polymer2;
+
+  // For each round
+std::map<string,long> otherpairs=pairs;
+  while (rounds) {
+    rounds--;
+    //Iterate through all current different pairs in the polymer
+    for (auto const& [key,value]: pairs) {
+      //If this pair is in the swaps
+      if (swaps.count(key)) {
+        //The count of the old 
+        int paircount=swaps.count(key);
+
+        //Then we find the new two pairs
+        string np1{key[0],swaps[key][0]};
+        string np2{swaps[key][0],key[1]};
+
+
+        //We add the two new pairs to the pairs
+        if (pairs.count(np1)) {
+          otherpairs[np1]+=paircount;
+        }else {
+          otherpairs[np1]=paircount;
+        }
+
+        if (pairs.count(np2)) {
+          otherpairs[np2]+=paircount;
+        }else {
+          otherpairs[np2]=paircount;
+        }
+        //And we remove the old pair from the original pairs
+        otherpairs[key]-=paircount;
+        if (otherpairs[key]<1) {
+          otherpairs.erase(key);
+        }
+      }
+      
+    }
+    pairs=otherpairs;
+  }
+  return otherpairs;
+
 }
 
-std::map<char, long long> occurrences(string polymer) {
-  std::map<char, long long> occs;
-  for (const char c : polymer) {
-    if (occs.count(c)) {
-      occs[c] += 1;
-    } else {
-      occs[c] = 1;
+std::map<char, long long> occurrences(std::map<string,long> pairs) {
+
+
+  std::map<char,long long> counts;
+
+  for (auto const &[key, value] : pairs) {
+    if (counts.count(key[0])) {
+      counts[key[0]]+=1;
+    }else {
+      counts[key[0]]=1;
     }
+
+    if (counts.count(key[1])) {
+      counts[key[1]]+=1;
+    }else {
+      counts[key[1]]=1;
   }
-  long long mx=0;
-  long long mn=INT32_MAX;
-  for (auto const &[key, value] : occs) {
-    if (value>mx) {
-      mx=value;
-    }
-    if (value<mn) {
-      mn=value;
-    }
-    cout << key << ": " << value << endl;
   }
-  cout<<"max: "<<mx<<", and min: "<<mn<<", and their subs: "<<mx-mn<<endl;
-  return occs;
+
+  for (auto const &[key, value] : counts) {
+    counts[key]=ceil(value/2.0);
+    cout<<key<<": "<<value<<endl;
+  }
+    return counts;
+
 }
+
 
 void analyse_contents(vector<string> stuff) {
 
-  int rounds = 15;
+  int rounds = 10;
   stuff.erase(stuff.begin() + 1);
   string polymer = stuff[0];
   stuff.erase(stuff.begin());
@@ -132,15 +179,12 @@ void analyse_contents(vector<string> stuff) {
     auto g = split(a, " -> ");
     swaps.insert({g[0], g[1]});
   }
-  while (rounds) {
-    rounds--;
-    polymer = performSwaps(polymer, swaps);
-  }
-  occurrences(polymer);
+    auto pairs= performSwaps(polymer, swaps, rounds);
+  occurrences(pairs);
 }
 
 int main() {
-  auto stuff = readfile("data.txt");
+  auto stuff = readfile("test.txt");
   auto start_time = std::chrono::high_resolution_clock::now();
   analyse_contents(stuff);
 
